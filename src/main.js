@@ -21,7 +21,7 @@ app.on('ready', () => {
 
 function createWindow() {
     win = new BrowserWindow({
-        width: 800,
+        width: 1200,
         height: 600
     });
     win.loadURL(url.format({
@@ -65,17 +65,41 @@ ipcMain.on('save-memo', (event, arg) => {
         return;
     }
 
-    db.memo.insert(arg, (err, newDoc) => {
+    let date = new Date(arg['Date']);
+    console.log("arg.date: " + date);
+    let doc = {
+        'OccurrenceDateTime': date,
+        'Date': formatDate(date),
+        'OccurrenceMonth': getMonth(date),
+        'Title': arg['Title'],
+        'Memo': arg['Memo']
+    };
+
+    db.memo.insert(doc, (err, newDoc) => {
         event.sender.send('asynchronous-memo-replay', newDoc);
     });
+});
+
+ipcMain.on('get-memos-in-month', (event, arg) =>{
+   console.log('get-memos-in-moneth arg: ' + arg['Date']);
+   let month = getMonth(new Date(arg['Date']));
+   db.memo.find({ OccurrenceMonth: month }).sort({ Date: 1 }).exec((err, docs) => {
+      let dateList = docs.filter((element, index, dateArray) => {
+          return dateArray.map((e) => {return e['Date'];}).indexOf(element['Date']) === index;
+      }).map(element => { return element['Date']; });
+
+      event.sender.send('occurrense-date-list', dateList);
+   });
 });
 
 // 指定日のメモを全て取得する
 // arg['Date'] メモの取得対象日付
 ipcMain.on('load-memo', (event, arg) => {
-    console.log(arg);
+    console.log('load-memo arg: ' + arg['Date']);
+    let date = formatDate(new Date(arg['Date']));
+    console.log('load-memo date: ' + date);
 
-    db.memo.find({ Date: arg['Date'] }, (err, docs) => {
+    db.memo.find({ Date: date }, (err, docs) => {
         event.sender.send('asynchronous-memo-replay', docs);
     });
 });
@@ -89,3 +113,28 @@ ipcMain.on('get-memo', (event, arg) => {
         event.sender.send('memo-detail', docs[0]);
     });
 });
+
+/**
+ * 日付型をフォーマットする
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatDate(date) {
+    if (!date || !(date instanceof Date)) {
+        return '';
+    }
+
+    return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
+}
+
+/**
+ * 日付型から月の情報を取得する
+ * @param {Date} date
+ */
+function getMonth(date) {
+    if (!date || !(date instanceof Date)) {
+        return '';
+    }
+
+    return date.getFullYear() + '/' + (date.getMonth() + 1);
+}

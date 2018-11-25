@@ -1,50 +1,95 @@
-function Calendar(targetId) {
-    this.targetId = targetId;
-    this.today = new Date();
-    this.targetDate =  this.today;
+function Calendar(id) {
     const baseDate = 24 * 60 * 60 * 1000;
+    let targetId = id;
+    let today = new Date();
+    let targetDate = today;
+    let dateDisp;
+    let container;
+    let body;
 
-    createCalender(this.targetDate, this.targetId);
+    let clickEvent;
+    let changeMonthEvent;
 
-    function createCalender(targetDate, targetId) {
-        let targetElement = document.getElementById(targetId);
+    let calenObj = {
+        create: function() {
+            let targetElement = document.getElementById(targetId);
 
-        let calen = document.createElement('div');
-        calen.setAttribute('class', 'calendar');
-        let navbar = createCurrentDate(targetDate);
-        calen.appendChild(navbar);
+            let calen = document.createElement('div');
+            calen.setAttribute('class', 'calendar');
+            let navbar = createCurrentDate(targetDate);
+            calen.appendChild(navbar);
 
-        this.container = document.createElement('div');
-        this.container.setAttribute('class', 'calendar-container');
+            container = document.createElement('div');
+            container.setAttribute('class', 'calendar-container');
 
-        let header = createHeader();
-        this.container.appendChild(header);
+            let header = createHeader();
+            container.appendChild(header);
 
-        this.body = createBody(targetDate);
-        this.container.appendChild(this.body);
+            body = createBody(targetDate);
+            container.appendChild(body);
 
-        calen.appendChild(this.container);
-        targetElement.appendChild(calen);
-    }
+            calen.appendChild(container);
+            targetElement.appendChild(calen);
+
+            dateDisp.innerHTML = formatDate(targetDate);
+        },
+        getTargetDate: function() {
+            return targetDate;
+        },
+        setClickEvent: function(eventHandler) {
+            if (!eventHandler) {
+                return;
+            }
+
+            clickEvent = eventHandler;
+        },
+        setChangeMonthEvent: function(eventHandler) {
+            if (!eventHandler) {
+                return;
+            }
+
+            changeMonthEvent = eventHandler;
+        },
+        setOccurrenceDateList(dateList) {
+            if (!Array.isArray(dateList)) {
+                console.log('配列を指定してください。');
+                return;
+            }
+
+            body.childNodes.forEach(element => {
+                Array.prototype.forEach.call(element.getElementsByClassName('date-item'), dateItem => {
+                    let itemDate = formatDate(new Date(dateItem.dataset.date));
+                    if (dateList.some(dateStr => {
+                        return dateStr === itemDate;
+                    })) {
+                        dateItem.classList.add('badge');
+                    }
+                });
+            });
+        }
+    };
+
+    return calenObj;
 
     /**
      *
-     * @param targetDate
      * @returns {HTMLElement}
      */
-    function createCurrentDate(targetDate) {
+    function createCurrentDate() {
         let navbar = document.createElement('div');
         navbar.setAttribute('class', 'calendar-nav navbar');
 
         let leftBtn = document.createElement('button');
         leftBtn.setAttribute('class', 'btn btn-action btn-link btn-lg');
         leftBtn.addEventListener('click', () => {
-            this.targetDate = addMonths(this.targetDate, -1);
-            this.dateDisp.innerHTML = formatDate(this.targetDate);
+            targetDate = addMonths(targetDate, -1);
+            dateDisp.innerHTML = formatDate(targetDate);
 
-            this.container.removeChild(this.body);
-            this.body = createBody(this.targetDate);
-            this.container.appendChild(this.body);
+            container.removeChild(body);
+            body = createBody(targetDate);
+            container.appendChild(body);
+
+            changeMonthEvent(calenObj);
         });
 
         let leftIcon = document.createElement('span');
@@ -52,20 +97,22 @@ function Calendar(targetId) {
         leftBtn.appendChild(leftIcon);
         navbar.appendChild(leftBtn);
 
-        this.dateDisp = document.createElement('div');
-        this.dateDisp.setAttribute('class', 'navbar-primary');
-        this.dateDisp.innerHTML = formatDate(this.targetDate);
-        navbar.append(this.dateDisp);
+        dateDisp = document.createElement('div');
+        dateDisp.setAttribute('class', 'navbar-primary');
+        dateDisp.innerHTML = formatDate(targetDate);
+        navbar.append(dateDisp);
 
         let rightBtn = document.createElement('button');
         rightBtn.setAttribute('class', 'btn btn-action btn-link btn-lg');
         rightBtn.addEventListener('click', () => {
-            this.targetDate = addMonths(this.targetDate, 1);
-            this.dateDisp.innerHTML = formatDate(this.targetDate);
+            targetDate = addMonths(targetDate, 1);
+            dateDisp.innerHTML = formatDate(targetDate);
 
-            this.container.removeChild(this.body);
-            this.body = createBody(this.targetDate);
-            this.container.appendChild(this.body);
+            container.removeChild(body);
+            body = createBody(targetDate);
+            container.appendChild(body);
+
+            changeMonthEvent(calenObj);
         });
 
         let rightIcon = document.createElement('span');
@@ -98,10 +145,9 @@ function Calendar(targetId) {
 
     /**
      * カレンダーのボディ部分を作成する
-     * @param {Date} targetDate カレンダーボディーを作成する月の情報
      * @return {HTMLElement} 指定した月のカレンダーボディー
      */
-    function createBody(targetDate) {
+    function createBody() {
         let currentMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
 
         let body = document.createElement('div');
@@ -146,6 +192,8 @@ function Calendar(targetId) {
      * @param {Element} body パネルの追加先div要素
      * @param {Date} date 作成する日付
      * @param {String} className 追加するクラス名
+     * @param panelClassName {String}
+     * @param buttonClassName {String}
      */
     function createCalendarPanel(body, date, panelClassName, buttonClassName) {
         panelClassName = panelClassName || '';
@@ -157,6 +205,16 @@ function Calendar(targetId) {
         let button = document.createElement('button');
         button.setAttribute('class', 'date-item ' + buttonClassName);
         button.innerHTML = String(date.getDate());
+        button.dataset.date = String(date);
+        button.addEventListener('click', (event) => {
+            let date = new Date(event.target.dataset.date);
+            targetDate = date;
+            let dateStr = formatDate(date);
+            dateDisp.innerHTML = dateStr;
+
+            console.log("Date: " + dateStr);
+            clickEvent(calenObj);
+        });
 
         panel.appendChild(button);
         body.appendChild(panel);
@@ -167,7 +225,7 @@ function Calendar(targetId) {
             return new Date();
         }
 
-        var m, d = (date = new Date(+date)).getDate();
+        let m, d = (date = new Date(+date)).getDate();
         date.setMonth(date.getMonth() + count, 1);
         m = date.getMonth();
         date.setDate(d);
@@ -177,17 +235,17 @@ function Calendar(targetId) {
 
         return date;
     }
+}
 
-    /**
-     * 日付型をフォーマットする
-     * @param {Date} date
-     * @returns {string}
-     */
-    function formatDate(date) {
-        if (!date || !(date instanceof Date)) {
-            return '';
-        }
-
-        return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
+/**
+ * 日付型をフォーマットする
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatDate(date) {
+    if (!date || !(date instanceof Date)) {
+        return '';
     }
+
+    return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
 }
