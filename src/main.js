@@ -22,7 +22,7 @@ app.on('ready', () => {
 function createWindow() {
     win = new BrowserWindow({
         width: 1200,
-        height: 600
+        height: 750
     });
     win.loadURL(url.format({
         pathname: '/index.html',
@@ -68,7 +68,7 @@ ipcMain.on('save-memo', (event, arg) => {
     let date = new Date(arg['Date']);
     console.log("arg.date: " + date);
     let doc = {
-        'OccurrenceDateTime': date,
+        'OccurrenceDateTime': new Date(),
         'Date': formatDate(date),
         'OccurrenceMonth': getMonth(date),
         'Title': arg['Title'],
