@@ -118,7 +118,7 @@ ipcMain.on('load-memo', (event, arg) => {
     let date = formatDate(new Date(arg['Date']));
     console.log('load-memo date: ' + date);
 
-    db.memo.find({ Date: date }, (err, docs) => {
+    db.memo.find({ Date: date }).sort({ OccurrenceDateTime: 1 }).exec((err, docs) => {
         event.sender.send('asynchronous-memo-replay', docs);
     });
 });
