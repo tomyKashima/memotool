@@ -77,12 +77,11 @@
 <script src="js/clock.js"></script>
 <script src="js/calendar.js"></script>
 <script>
-    const DATE_FORMAT = 'YYYY/MM/DD';
     window.ipcRenderer = require('electron').ipcRenderer;
-    const marked = require('marked');
 
     function updateMemo(args) {
         console.log('updateMemo');
+        removeMemoList();
 
         console.log(args);
         if (!args || (Array.isArray(args) && args.length == 0)) {
@@ -128,6 +127,12 @@
         let removeBtn = document.createElement('button');
         removeBtn.setAttribute('class', 'btn');
         removeBtn.innerHTML = 'Remove';
+        removeBtn.addEventListener('click', (event) => {
+            let id = event.target.parentNode.parentNode.dataset.id;
+            ipcRenderer.send('remove-memo', {
+                '_id': id
+            });
+        });
         removeCel.appendChild(removeBtn);
         newRow.appendChild(removeCel);
 
@@ -150,6 +155,9 @@
 
         document.getElementById('memo-title').value = '';
         document.getElementById('memo-area').value = '';
+        ipcRenderer.send('get-memos-in-month', {
+            'Date': calen.getTargetDate(),
+        });
     });
 
     // メモ一覧表示
@@ -161,6 +169,15 @@
     ipcRenderer.on('error-message-replay', (event, arg) => {
         showMessage(arg);
     });
+
+    // メモ一覧をクリア
+    function removeMemoList() {
+        let targetElement = document.getElementById('grid')
+            .getElementsByTagName('tbody')[0];
+        while(targetElement.firstChild) {
+            targetElement.removeChild(targetElement.firstChild);
+        }
+    }
 
     // 起動時処理
     let calen = null;
@@ -182,12 +199,7 @@
 
         calen = Calendar('calpos');
         calen.setClickEvent((calenObj) => {
-            let targetElement = document.getElementById('grid')
-                .getElementsByTagName('tbody')[0];
-            while(targetElement.firstChild) {
-                targetElement.removeChild(targetElement.firstChild);
-            }
-
+            removeMemoList();
             ipcRenderer.send('load-memo', {
                 'Date': calenObj.getTargetDate()
             });
@@ -214,14 +226,17 @@
         const title = document.querySelector('#detail-title');
         title.innerHTML = arg['Title'];
         const memo = document.querySelector('#detail-memo');
-
-        let hdoc = marked(arg['Memo'],{
-            renderer: new marked.Renderer()
-        });
-        memo.innerHTML = hdoc;
+        memo.innerHTML = arg['Memo'];
 
         const modal = document.querySelector('#detail');
         modal.showModal();
+    });
+
+    // memo削除終了時にメモ一覧を更新する
+    ipcRenderer.on('memo-deleted', () => {
+        ipcRenderer.send('load-memo', {
+            'Date': calen.getTargetDate()
+        });
     });
 </script>
 </body>

@@ -3,6 +3,7 @@ const { app, ipcMain, BrowserWindow, protocol } = require('electron');
 const NeDB = require('nedb');
 const path = require('path');
 const url = require('url');
+const marked = require('marked');
 
 let win = null;
 const db = {};
@@ -80,6 +81,24 @@ ipcMain.on('save-memo', (event, arg) => {
     });
 });
 
+ipcMain.on('remove-memo', (event, arg) => {
+    console.log('remove-memo');
+    console.log(arg);
+
+    if (!arg['_id']) {
+        event.sender.send('error-message-replay', '削除対象が設定されていません。');
+        return;
+    }
+
+    db.memo.remove({ _id: arg['_id'] }, {}, () => {
+        event.sender.send('memo-deleted');
+    });
+});
+
+/**
+ * 指定した月でメモが設定されている日付の一覧を取得する
+ * @param {Date} arg['Date'] 対象月を含むDateオブジェクト
+ */
 ipcMain.on('get-memos-in-month', (event, arg) =>{
    console.log('get-memos-in-moneth arg: ' + arg['Date']);
    let month = getMonth(new Date(arg['Date']));
@@ -110,7 +129,11 @@ ipcMain.on('get-memo', (event, arg) => {
     console.log(arg);
 
     db.memo.find({ _id: arg['_id'] }, (err, docs) => {
-        event.sender.send('memo-detail', docs[0]);
+        let doc = docs[0];
+        doc['Memo'] = marked(doc['Memo'], {
+            renderer: new marked.Renderer()
+        });
+        event.sender.send('memo-detail', doc);
     });
 });
 
