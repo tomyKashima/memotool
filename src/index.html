@@ -79,6 +79,7 @@
 <script>
     const DATE_FORMAT = 'YYYY/MM/DD';
     window.ipcRenderer = require('electron').ipcRenderer;
+    const marked = require('marked');
 
     function updateMemo(args) {
         console.log('updateMemo');
@@ -213,7 +214,11 @@
         const title = document.querySelector('#detail-title');
         title.innerHTML = arg['Title'];
         const memo = document.querySelector('#detail-memo');
-        memo.innerHTML = arg['Memo'];
+
+        let hdoc = marked(arg['Memo'],{
+            renderer: new marked.Renderer()
+        });
+        memo.innerHTML = hdoc;
 
         const modal = document.querySelector('#detail');
         modal.showModal();
