@@ -65,6 +65,9 @@
         </div>
     </div>
     <div class="columns">
+        <div class="column col-2">
+            <button id="clear-btn" class="btn btn-primary btn-fill">Clear</button>
+        </div>
         <div class="column col-2 col-ml-auto">
             <button id="save-btn" class="btn btn-primary btn-fill">Save</button>
         </div>
@@ -162,6 +165,13 @@
         ipcRenderer.send('get-memos-in-month', {
             'Date': calen.getTargetDate(),
         });
+    });
+
+    // Clearボタンイベント
+    document.getElementById('clear-btn').addEventListener('click', () => {
+        document.getElementById('memo-id').value = '';
+        document.getElementById('memo-title').value = '';
+        document.getElementById('memo-area').value = '';
     });
 
     // メモ一覧表示
