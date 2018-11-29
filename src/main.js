@@ -59,7 +59,8 @@ app.on('activate', () => {
 // arg['Title'] メモのタイトル
 // arg['Memo'] メモの本文
 ipcMain.on('save-memo', (event, arg) => {
-    console.log(arg);
+    console.log('save-memo: ' + arg);
+    console.log('_id: ' + arg['_id']);
 
     if (!arg['Date'] || !arg['Title'] || !arg['Memo']) {
         event.sender.send('error-message-replay', '日付とタイトルとメモを入力してください。');
@@ -76,10 +77,22 @@ ipcMain.on('save-memo', (event, arg) => {
         'Memo': arg['Memo']
     };
 
-    db.memo.insert(doc, (err, newDoc) => {
-        // 最新のメモ一覧を取得する
-        sendMemoList(event, date);
-    });
+    if (!arg['_id']) {
+        // メモの新規追加
+        db.memo.insert(doc, (err, newDoc) => {
+            // 最新のメモ一覧を取得する
+            sendMemoList(event, date);
+        });
+    } else {
+        // メモの更新
+        db.memo.update(
+            { _id: arg['_id'] },
+            { $set: { Title: arg['Title'], Memo: arg['Memo'] }}, 
+            { multi: false },
+            (err, newDoc) => {
+                sendMemoList(event, date);
+        });
+    }
 });
 
 /**
@@ -141,6 +154,19 @@ ipcMain.on('get-memo', (event, arg) => {
             renderer: new marked.Renderer()
         });
         event.sender.send('memo-detail', doc);
+    });
+});
+
+/**
+ * 更新対象のメモを取得する
+ */
+ipcMain.on('update-target-memo', (event, arg) => {
+    console.log('update-target-memo');
+
+    db.memo.find({ _id: arg['_id'] }, (err, docs) => {
+        let doc = docs[0];
+        doc['_id'] = arg['_id'];
+        event.sender.send('memo-update-disp', doc);
     });
 });
 
