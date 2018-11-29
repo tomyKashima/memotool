@@ -191,6 +191,22 @@
             'Date': now
         });
 
+        const TAB_KEY_CODE = 9;
+        let memoArea = document.getElementById('memo-area').addEventListener('keydown', (event) => {
+            if ( event.keyCode != TAB_KEY_CODE ) { return; }
+
+            event.preventDefault();
+            let obj = event.target;
+
+            // キーが押下されたカーソル位置と、カーソルの左右文字列を取得して、タブ文字を挿入する
+            let cursorPosition = obj.selectionEnd;
+            let cursorLeft = obj.value.substr(0, cursorPosition );
+            let cursorRight = obj.value.substr( cursorPosition, obj.value.length );
+
+            obj.value = cursorLeft + "\t" + cursorRight;
+            obj.selectionEnd = cursorPosition + 1;
+        }, false);
+
         const returnBtn = document.querySelector('#dialogReturn');
         returnBtn.addEventListener('click', (event) => {
             const modal = document.querySelector('#detail');

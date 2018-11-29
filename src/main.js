@@ -77,9 +77,21 @@ ipcMain.on('save-memo', (event, arg) => {
     };
 
     db.memo.insert(doc, (err, newDoc) => {
-        event.sender.send('asynchronous-memo-replay', newDoc);
+        // 最新のメモ一覧を取得する
+        sendMemoList(event, date);
     });
 });
+
+/**
+ * 指定した日付のメモ一覧をipcRendererに送信する
+ * @param {Date} date 
+ */
+function sendMemoList(event, date) {
+    let dateStr = formatDate(date);
+    db.memo.find({ Date: dateStr }).sort({ OccurrenceDateTime: 1 }).exec((err, docs) => {
+        event.sender.send('asynchronous-memo-replay', docs);
+    });
+}
 
 ipcMain.on('remove-memo', (event, arg) => {
     console.log('remove-memo');
@@ -114,13 +126,8 @@ ipcMain.on('get-memos-in-month', (event, arg) =>{
 // 指定日のメモを全て取得する
 // arg['Date'] メモの取得対象日付
 ipcMain.on('load-memo', (event, arg) => {
-    console.log('load-memo arg: ' + arg['Date']);
-    let date = formatDate(new Date(arg['Date']));
-    console.log('load-memo date: ' + date);
-
-    db.memo.find({ Date: date }).sort({ OccurrenceDateTime: 1 }).exec((err, docs) => {
-        event.sender.send('asynchronous-memo-replay', docs);
-    });
+    let date = new Date(arg['Date']);
+    sendMemoList(event, date);
 });
 
 // 特定のメモを取得する
