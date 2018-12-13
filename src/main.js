@@ -74,7 +74,7 @@ ipcMain.on('save-memo', (event, arg) => {
         'Date': formatDate(date),
         'OccurrenceMonth': getMonth(date),
         'Title': arg['Title'],
-        'Memo': arg['Memo']
+        'Memo': arg['Memo'].replace(/(.*\S)\n/g, "$1  \n")
     };
 
     if (!arg['_id']) {
