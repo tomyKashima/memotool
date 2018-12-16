@@ -68,13 +68,14 @@ ipcMain.on('save-memo', (event, arg) => {
     }
 
     let date = new Date(arg['Date']);
+    let memo = arg['Memo'].replace(/(.*\S)(\r?\n)/g, '$1  $2');
     console.log("arg.date: " + date);
     let doc = {
         'OccurrenceDateTime': new Date(),
         'Date': formatDate(date),
         'OccurrenceMonth': getMonth(date),
         'Title': arg['Title'],
-        'Memo': arg['Memo'].replace(/(.*\S)\n/g, "$1  \n")
+        'Memo': memo
     };
 
     if (!arg['_id']) {
@@ -87,7 +88,7 @@ ipcMain.on('save-memo', (event, arg) => {
         // メモの更新
         db.memo.update(
             { _id: arg['_id'] },
-            { $set: { Title: arg['Title'], Memo: arg['Memo'] }}, 
+            { $set: { Title: arg['Title'], Memo: memo }},
             { multi: false },
             (err, newDoc) => {
                 sendMemoList(event, date);
