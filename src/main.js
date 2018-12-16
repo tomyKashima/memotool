@@ -166,6 +166,7 @@ ipcMain.on('update-target-memo', (event, arg) => {
 
     db.memo.find({ _id: arg['_id'] }, (err, docs) => {
         let doc = docs[0];
+        doc['Memo'] = doc['Memo'].replace(/(.*\S)\s{2,}(\r?\n)/g, '$1$2')
         doc['_id'] = arg['_id'];
         event.sender.send('memo-update-disp', doc);
     });
